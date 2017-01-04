@@ -1,0 +1,7 @@
+logging:
+  level: INFO
+  loggers:
+    com.shawncaeiro.transit: DEBUG
+
+server:
+  rootPath: /api/*
