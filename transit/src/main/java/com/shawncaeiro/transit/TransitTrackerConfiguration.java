@@ -7,4 +7,13 @@ import javax.validation.constraints.*;
 
 public class TransitTrackerConfiguration extends Configuration {
     // TODO: implement service configuration
+    public String apiKey;
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
+    }
 }

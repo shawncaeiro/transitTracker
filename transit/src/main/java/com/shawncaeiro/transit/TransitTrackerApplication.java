@@ -26,9 +26,8 @@ public class TransitTrackerApplication extends Application<TransitTrackerConfigu
     public void run(final TransitTrackerConfiguration configuration,
                     final Environment environment) {
         // TODO: implement application
-        BusTrackerResource busTrackerResource = new BusTrackerResource();
+        BusTrackerResource busTrackerResource = new BusTrackerResource(configuration.getApiKey());
         environment.jersey().register(busTrackerResource);
-
     }
 
 }
