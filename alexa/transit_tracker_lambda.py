@@ -84,12 +84,17 @@ def get_bus_times(intent):
             response = urllib2.urlopen(API_BASE + "route/" + route_number + "/stop/" + station_code)
             data = json.load(response)['data'][0] 
             
-            speech_output = "The next " + data['routeName'] + " bus will arrive to " + data['stopName'] + " in "
-            for arrival in data["arrivalTimes"]:
-                speech_output += arrival + ", " 
+            if len(data["arrivalTimes"]) > 0:
+                speech_output = "The next " + data['routeName'] + " bus will arrive to " + data['stopName'] + " in "
+                for arrival in data["arrivalTimes"]:
+                    if data["arrivalTimes"] == "DUE":
+                        data["arrivalTimes"] = 0
+                    speech_output += arrival + ", " 
 
-            speech_output += " minutes."
-            reprompt_text = ""
+                speech_output += "minutes."
+                reprompt_text = ""
+            else:
+                speech_output = "No " + data['routeName'] + " buses are arriving at " + data['stopName'] + " in the near time future."
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))
@@ -98,7 +103,7 @@ def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
         "outputSpeech": {
             "type": "PlainText",
-            "text": output
+            "text": output.replace("&", "and")
         },
         "card": {
             "type": "Simple",
