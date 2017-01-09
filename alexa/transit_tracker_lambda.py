@@ -1,5 +1,7 @@
 import urllib2
 import json
+from datetime import datetime
+from dateutil import tz
 
 API_BASE="http://shawnc.us/api/tracker/"
 
@@ -28,6 +30,8 @@ def on_intent(intent_request, session):
     intent = intent_request["intent"]
     intent_name = intent_request["intent"]["name"]
 
+    if intent_name == "GetBusTimesByTimeOfDay":
+        return get_bus_times_by_time_of_day(intent)
     if intent_name == "GetTrainTimes":
         return get_bus_times(intent)
     elif intent_name == "AMAZON.HelpIntent":
@@ -65,13 +69,55 @@ def get_station_code(route_number):
                 '36': '5366'}
     return mapping[route_number]
 
+def get_bus_times_by_time_of_day(intent):
+    session_attributes = {}
+    card_title = "BART Departures"
+    speech_output = "I'm not sure which bus you wanted bus times for. " \
+                    "Please try again."
+    reprompt_text = "I'm not sure which bus you wanted train times for. " \
+                    "Try asking about the 77 bus, for example."
+    should_end_session = False
+
+    chicago_tz = tz.gettz('America/Chicago')
+
+    central_now_hour = datetime.now(chicago_tz).replace(tzinfo=chicago_tz).hour
+
+    if central_now_hour < 10:
+        route_number = "77"
+    else:
+        route_number = "36"
+
+    station_code = get_station_code(route_number)
+
+    if (route_number != "unkn"):
+        card_title = "CTA Bus departures from " + route_number + " bus"
+
+        response = urllib2.urlopen(API_BASE + "route/" + route_number + "/stop/" + station_code)
+        data = json.load(response)['data'][0] 
+        
+        if len(data["arrivalTimes"]) > 0:
+            speech_output = "The next " + data['routeName'] + " bus will arrive to " + data['stopName'] + " in "
+            for arrival in data["arrivalTimes"]:
+                if data["arrivalTimes"] == "DUE":
+                    data["arrivalTimes"] = 0
+                speech_output += arrival + ", " 
+
+            speech_output += "minutes."
+            reprompt_text = ""
+        else:
+            speech_output = "No " + data['routeName'] + " buses are arriving at " + data['stopName'] + " in the near time future."
+
+    return build_response(session_attributes, build_speechlet_response(
+        card_title, speech_output, reprompt_text, should_end_session))
+
+
 def get_bus_times(intent):
     session_attributes = {}
     card_title = "BART Departures"
-    speech_output = "I'm not sure which station you wanted train times for. " \
+    speech_output = "I'm not sure which bus you wanted bus times for. " \
                     "Please try again."
-    reprompt_text = "I'm not sure which station you wanted train times for. " \
-                    "Try asking about Fremont or Powell Street for example."
+    reprompt_text = "I'm not sure which bus you wanted train times for. " \
+                    "Try asking about the 77 bus, for example."
     should_end_session = False
 
     if "Bus" in intent["slots"]:
