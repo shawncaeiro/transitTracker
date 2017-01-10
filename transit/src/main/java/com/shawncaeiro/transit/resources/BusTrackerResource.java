@@ -64,6 +64,10 @@ public class BusTrackerResource {
 			}
 		}
 
+		if (prediction.busTimeResponse.error != null && prediction.busTimeResponse.error.length > 0) {
+    		return Response.noContent().build();
+		}
+
 		List<String> arrivalTimes = new ArrayList<>();
 		for (Prediction.BusTimeResponse.Prd prd : prediction.busTimeResponse.prd) {
 			arrivalTimes.add(prd.prdctdn);

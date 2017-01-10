@@ -32,7 +32,7 @@ def on_intent(intent_request, session):
 
     if intent_name == "GetBusTimesByTimeOfDay":
         return get_bus_times_by_time_of_day(intent)
-    if intent_name == "GetTrainTimes":
+    if intent_name == "GetBusTimes":
         return get_bus_times(intent)
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
@@ -66,7 +66,8 @@ def get_welcome_response():
 
 def get_station_code(route_number):
     mapping = { '77': '4996',
-                '36': '5366'}
+                '36': '5366',
+                '156' : '1072'}
     return mapping[route_number]
 
 def get_bus_times_by_time_of_day(intent):
@@ -104,19 +105,33 @@ def get_bus_data_from_cta(route_id, stop_id):
         card_title = "CTA Bus departures from " + route_id + " bus"
 
         response = urllib2.urlopen(API_BASE + "route/" + route_id + "/stop/" + stop_id)
-        data = json.load(response)['data'][0] 
-        
-        if len(data["arrivalTimes"]) > 0:
-            speech_output = "The next " + data['routeName'] + " bus will arrive to " + data['stopName'] + " in "
-            for arrival in data["arrivalTimes"]:
-                if data["arrivalTimes"] == "DUE":
-                    data["arrivalTimes"] = "0"
-                speech_output += arrival + ", " 
-
-            speech_output += "minutes."
-            reprompt_text = ""
+        if response.getcode() != 204:
+            data = json.load(response)['data'][0] 
+            
+            if len(data["arrivalTimes"]) > 0:
+                speech_output = "The next " + data['routeName'] + " bus will arrive to " + data['stopName'] + " in "
+                for arrival in data["arrivalTimes"][:-1]:
+                    if arrival == "DUE":
+                        arrival = "0"
+                    speech_output += arrival + ", " 
+                if len(data["arrivalTimes"]) > 1:
+                    if data["arrivalTimes"][-1] == "DUE":
+                        data["arrivalTimes"][-1] = "0"
+                    speech_output += "and " + data["arrivalTimes"][-1] + " "
+                else:
+                    if data["arrivalTimes"][-1] == "DUE":
+                        data["arrivalTimes"][-1] = "0"
+                    speech_output += data["arrivalTimes"][-1] + " "
+    
+    
+                speech_output += "minutes."
+                reprompt_text = ""
+            else:
+                speech_output = "No " + data['routeName'] + " buses are arriving at " + data['stopName'] + " in the near time future."
         else:
-            speech_output = "No " + data['routeName'] + " buses are arriving at " + data['stopName'] + " in the near time future."
+            speech_output = "No buses are arriving in the near future for this route."
+        
+        should_end_session = True
 
     return build_response(session_attributes, build_speechlet_response(
         card_title, speech_output, reprompt_text, should_end_session))

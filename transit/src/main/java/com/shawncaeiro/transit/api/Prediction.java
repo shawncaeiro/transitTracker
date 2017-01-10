@@ -1,5 +1,6 @@
 package com.shawncaeiro.transit.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Arrays;
@@ -7,6 +8,7 @@ import java.util.Arrays;
 /**
  * Created by shawncaeiro on 1/4/17.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Prediction {
 
     @JsonProperty("bustime-response")
@@ -21,12 +23,19 @@ public class Prediction {
 
     public static class BusTimeResponse {
         public Prd[] prd;
+        public Err[] error;
 
         @Override
         public String toString() {
             return "BusTimeResponse{" +
                     "prd=" + Arrays.toString(prd) +
                     '}';
+        }
+
+        public static class Err {
+            public String rt;
+            public String stpid;
+            public String msg;
         }
 
         public static class Prd {
